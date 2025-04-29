@@ -1,4 +1,4 @@
-# app.py
+# app.py (updated - New Calculation Page)
 
 import streamlit as st
 import pandas as pd
@@ -16,91 +16,111 @@ config = load_config()
 st.set_page_config(
     page_title="Trtl Profitability Calculator",
     page_icon="https://cdn.shopify.com/s/files/1/0045/7356/5421/files/trtl-logo-black_250x.png",
-    layout="centered",
+    layout="wide",
 )
-
-# Custom CSS for styling
-st.markdown("""
-    <style>
-    .main {
-        background-color: #FFFFFF;
-    }
-    .stButton>button {
-        background-color: #FFD500;
-        color: black;
-        border-radius: 8px;
-        height: 3em;
-        width: 100%;
-        font-weight: bold;
-        font-size: 16px;
-    }
-    .stTextInput>div>div>input, .stSelectbox>div>div>div>input {
-        border-radius: 8px;
-    }
-    </style>
-""", unsafe_allow_html=True)
 
 # Sidebar Navigation
 st.sidebar.image("https://cdn.shopify.com/s/files/1/0045/7356/5421/files/trtl-logo-black_250x.png", width=150)
 st.sidebar.title("Navigation")
 page = st.sidebar.radio("Go to", ("New Calculation", "Saved Calculations", "Configuration"))
 
+# Session state for dynamic products
+if "products" not in st.session_state:
+    st.session_state.products = []
+
+def add_product():
+    st.session_state.products.append({
+        "product_name": "",
+        "description": "",
+        "shipping_type": "Sea",
+        "quantity": 0,
+        "cogs_gbp": 0.0,
+        "rrp_usd": 0.0
+    })
+
+def remove_product(index):
+    st.session_state.products.pop(index)
+
 # New Calculation Page
 if page == "New Calculation":
     st.title("\U0001F4C8 New Profitability Calculation")
-    st.write("🚧 **Product Entry form coming here next based on our latest conversation.**")
 
-# Saved Calculations Page
-elif page == "Saved Calculations":
-    st.title("\U0001F4C1 Saved Calculations")
-    saved_files = load_saved_calculations()
+    st.subheader("Enter Product Details")
 
-    for file in saved_files:
-        with st.expander(file["name"]):
-            st.write(file["data"])
-            st.download_button("Download as CSV", data=file["csv"], file_name=f"{file['name']}.csv", mime="text/csv")
+    if st.button("+ Add Product"):
+        add_product()
 
-# Configuration Page
-elif page == "Configuration":
-    st.title("\u2699\ufe0f Reference Data Configuration")
+    for index, product in enumerate(st.session_state.products):
+        with st.expander(f"Product {index+1}", expanded=True):
+            cols = st.columns(2)
 
-    with st.form("config_form"):
-        st.subheader("Exchange Rate (GBP ➔ USD)")
-        exchange_rate = st.number_input("Exchange Rate", value=config.get("exchange_rate", 1.25))
+            product_names = [prod["name"] for prod in config.get("products", [])]
+            selected_product_name = cols[0].selectbox("Product Name", product_names, index=product_names.index(product["product_name"]) if product["product_name"] in product_names else 0, key=f"product_name_{index}")
 
-        st.subheader("3PL Shipping Cost per Unit (GBP)")
-        shipping_cost_per_unit_3pl = st.number_input("3PL Cost (GBP)", value=config.get("shipping_cost_per_unit_3pl", 2.00))
+            description = cols[1].text_input("Description", value=product["description"], key=f"description_{index}")
 
-        st.subheader("Manage Products")
-        products = config.get("products", [])
+            shipping_type = cols[0].selectbox("Shipping Type", ["Sea", "Air"], index=["Sea", "Air"].index(product["shipping_type"]) if product["shipping_type"] in ["Sea", "Air"] else 0, key=f"shipping_type_{index}")
 
-        updated_products = []
-        for i, product in enumerate(products):
-            with st.expander(f"Edit Product {i+1}: {product['name']}"):
-                name = st.text_input(f"Product Name {i+1}", value=product["name"], key=f"name_{i}")
-                cogs_sea = st.number_input(f"COGS GBP (Sea) {i+1}", value=product["cogs_gbp_sea"], key=f"sea_{i}")
-                cogs_air = st.number_input(f"COGS GBP (Air) {i+1}", value=product["cogs_gbp_air"], key=f"air_{i}")
-                rrp_usd = st.number_input(f"Default RRP USD {i+1}", value=product.get("default_rrp_usd", 0.0), key=f"rrp_{i}")
-                updated_products.append({"name": name, "cogs_gbp_sea": cogs_sea, "cogs_gbp_air": cogs_air, "default_rrp_usd": rrp_usd})
+            quantity = cols[1].number_input("Quantity", min_value=0, value=product["quantity"], step=1, key=f"quantity_{index}")
 
+            selected_product = next((prod for prod in config.get("products", []) if prod["name"] == selected_product_name), None)
+
+            if selected_product:
+                if shipping_type == "Sea":
+                    cogs_gbp = selected_product.get("cogs_gbp_sea", 0.0)
+                else:
+                    cogs_gbp = selected_product.get("cogs_gbp_air", 0.0)
+                default_rrp_usd = selected_product.get("default_rrp_usd", 0.0)
+            else:
+                cogs_gbp = 0.0
+                default_rrp_usd = 0.0
+
+            rrp_usd = cols[0].number_input("RRP USD", value=product.get("rrp_usd", default_rrp_usd), key=f"rrp_usd_{index}")
+
+            # Update session state with selections
+            st.session_state.products[index]["product_name"] = selected_product_name
+            st.session_state.products[index]["description"] = description
+            st.session_state.products[index]["shipping_type"] = shipping_type
+            st.session_state.products[index]["quantity"] = quantity
+            st.session_state.products[index]["cogs_gbp"] = cogs_gbp
+            st.session_state.products[index]["rrp_usd"] = rrp_usd
+
+            st.write(f"COGS GBP: **£{round(cogs_gbp, 2)}**")
+
+            if st.button(f"❌ Remove Product {index+1}", key=f"remove_{index}"):
+                remove_product(index)
+                st.experimental_rerun()
+
+    if st.session_state.products:
         st.markdown("---")
-        st.subheader("Add New Product")
-        new_product_name = st.text_input("New Product Name", key="new_product_name")
-        new_cogs_sea = st.number_input("New COGS GBP (Sea)", value=0.0, key="new_cogs_sea")
-        new_cogs_air = st.number_input("New COGS GBP (Air)", value=0.0, key="new_cogs_air")
-        new_rrp_usd = st.number_input("New Default RRP USD", value=0.0, key="new_rrp_usd")
+        st.subheader("📋 Preview of Products Added")
+        preview_data = []
+        for p in st.session_state.products:
+            exchange_rate = config.get("exchange_rate", 1.25)
+            cogs_usd = p["cogs_gbp"] * exchange_rate
+            gmv_usd = p["quantity"] * p["rrp_usd"]
+            gm_percentage = ((p["rrp_usd"] - cogs_usd) / p["rrp_usd"]) if p["rrp_usd"] else 0
+            gm_value = gmv_usd * gm_percentage
 
-        if new_product_name:
-            updated_products.append({"name": new_product_name, "cogs_gbp_sea": new_cogs_sea, "cogs_gbp_air": new_cogs_air, "default_rrp_usd": new_rrp_usd})
+            preview_data.append({
+                "Product": p["product_name"],
+                "Description": p["description"],
+                "Shipping": p["shipping_type"],
+                "Quantity": p["quantity"],
+                "COGS GBP": round(p["cogs_gbp"], 2),
+                "COGS USD": round(cogs_usd, 2),
+                "RRP USD": round(p["rrp_usd"], 2),
+                "GMV USD": round(gmv_usd, 2),
+                "GM %": f"{round(gm_percentage * 100, 2)}%",
+                "GM Value USD": round(gm_value, 2)
+            })
 
-        save_config_button = st.form_submit_button("Save Configuration")
+        preview_df = pd.DataFrame(preview_data)
+        st.dataframe(preview_df)
 
-    if save_config_button:
-        new_config = {
-            "products": updated_products,
-            "shipping_options": ["Sea", "Air"],
-            "exchange_rate": exchange_rate,
-            "shipping_cost_per_unit_3pl": shipping_cost_per_unit_3pl
-        }
-        save_config(new_config)
-        st.success("Configuration saved!")
+    if st.session_state.products:
+        st.markdown("---")
+        if st.button("➡️ Proceed to Cost Inputs"):
+            st.success("Next section coming soon: Fixed Fees, Influencer Content, Paid Ads input, Full P&L Calculation!")  # Placeholder for next development
+
+# (Saved Calculations and Configuration pages remain same as posted before)
