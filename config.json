@@ -11,6 +11,12 @@
       "cogs_gbp_sea": 2.00,
       "cogs_gbp_air": 2.50,
       "default_rrp_usd": 15.00
+    },
+    {
+      "name": "Packing Pods",
+      "cogs_gbp_sea": 3.50,
+      "cogs_gbp_air": 4.00,
+      "default_rrp_usd": 22.00
     }
   ],
   "shipping_options": ["Sea", "Air"],
