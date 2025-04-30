@@ -112,14 +112,16 @@ if page == "New Calculation":
             gm_pct = ((p["rrp_usd"] - cogs_usd) / p["rrp_usd"]) if p["rrp_usd"] else 0
             gm_val = gmv * gm_pct
 
-            preview_data.append({
-                "#": i,
-                "Product": p["product_name"],
-                "Description": p["description"],
-                "Shipping": p["shipping_type"],
-                "Quantity": p["quantity"],
-                "COGS GBP": f"£{round(p['cogs_gbp'], 2)}",
-                "COGS USD": f"${round(cogs_usd, 2)}",
-                "RRP USD": f"${round(p['rrp_usd'], 2)}",
-                "GMV USD": f"${round(gmv, 2)}",
-                "GM %": f"{round(gm_pct_
+           preview_data.append({
+    "#": i,
+    "Product": p["product_name"],
+    "Description": p["description"],
+    "Shipping": p["shipping_type"],
+    "Quantity": p["quantity"],
+    "COGS GBP": f"£{round(p['cogs_gbp'], 2)}",
+    "COGS USD": f"${round(cogs_usd, 2)}",
+    "RRP USD": f"${round(p['rrp_usd'], 2)}",
+    "GMV USD": f"${round(gmv, 2)}",
+    "GM %": f"{round(gm_pct * 100, 2)}%",
+    "GM Value USD": f"${round(gm_val, 2)}"
+})
