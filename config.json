@@ -1,0 +1,13 @@
+{
+  "products": [
+    {
+      "name": "Travel Pillow",
+      "cogs_gbp_sea": 5.00,
+      "cogs_gbp_air": 5.50,
+      "default_rrp_usd": 30.00
+    }
+  ],
+  "shipping_options": ["Sea", "Air"],
+  "exchange_rate": 1.25,
+  "shipping_cost_per_unit_3pl": 2.00
+}
