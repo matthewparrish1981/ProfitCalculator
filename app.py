@@ -20,7 +20,7 @@ st.set_page_config(
     layout="wide",
 )
 
-st.sidebar.image("https://cdn.shopify.com/s/files/1/0045/7356/5421/files/trtl-logo-black_250x.png?v=1695992032", width=150)
+st.sidebar.image("https://trtltravel.com/cdn/shop/files/primary-logo_100x_9af5f51d-c0fd-4b24-b1a0-f737b1c81851_80x@2x.png?v=1714654582", width=150)
 st.sidebar.title("Navigation")
 page = st.sidebar.radio("Go to", ("New Calculation", "Saved Calculations", "Configuration"))
 
